@@ -26,7 +26,7 @@
       form { display: grid; gap: 14px; margin-top: 20px; }
       .field { display: grid; gap: 4px; }
       label { font-size: 13px; font-weight: 600; }
-      input {
+      input, textarea {
         padding: 9px 11px;
         font-size: 14px;
         border: 1px solid #d0d4d9;
@@ -34,7 +34,10 @@
         background: #fff;
         color: #16191d;
         width: 340px;
+        box-sizing: border-box;
+        font-family: inherit;
       }
+      textarea { min-height: 64px; resize: vertical; }
       .hint { font-size: 11px; color: #9aa3af; }
       code { background: rgba(127,127,127,.12); padding: 1px 5px; border-radius: 4px; font-size: 12px; }
     </style>
@@ -137,6 +140,12 @@
         <input id="f-okved" name="okved" type="text" />
       </div>
 
+      <div class="field">
+        <label for="f-website">Сайт</label>
+        <input id="f-website" name="website" type="text" placeholder="https://___.__" />
+        <span class="hint">placeholder-шаблон https://___.__ → URL, согласованный с организацией</span>
+      </div>
+
       <h2>Персональные данные</h2>
       <div class="field">
         <label for="f-fio">ФИО</label>
@@ -217,11 +226,32 @@
         <span class="hint">полный адрес одной строкой</span>
       </div>
 
+      <div class="field">
+        <label for="f-delivery-note">Адрес доставки (textarea)</label>
+        <textarea id="f-delivery-note" name="delivery_address"></textarea>
+        <span class="hint">textarea — авто-определение адреса</span>
+      </div>
+
       <h2>Не заполняется</h2>
+      <div class="field">
+        <label for="f-comment-area">Комментарий (textarea)</label>
+        <textarea id="f-comment-area" name="comment"></textarea>
+        <span class="hint">не распознаётся — научите через «+»</span>
+      </div>
       <div class="field">
         <label for="f-card">Номер карты</label>
         <input id="f-card" name="card_number" type="text" />
         <span class="hint">карточные поля не трогаем</span>
+      </div>
+      <div class="field">
+        <label for="f-login">Логин</label>
+        <input id="f-login" name="login" type="text" />
+        <span class="hint">не распознаётся — можно научить через «+» (тип или скрипт)</span>
+      </div>
+      <div class="field">
+        <label for="f-promo">Код приглашения</label>
+        <input id="f-promo" name="promo_code" type="text" />
+        <span class="hint">тоже не распознаётся — кандидат на «+»</span>
       </div>
       <div class="field">
         <label for="f-other">Комментарий</label>

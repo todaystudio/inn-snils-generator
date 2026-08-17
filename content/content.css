@@ -179,6 +179,330 @@
   outline-offset: 2px;
 }
 
+/* Кнопка «+» рядом с «Заполнить все». */
+.innfiller-fillall__add {  -webkit-appearance: none;
+  appearance: none;
+  border: 0;
+  margin: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff;
+  color: #1a5fb4;
+  font-size: 19px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18), 0 0 0 1px rgba(26, 95, 180, 0.2);
+  transition: transform 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.innfiller-fillall__add:hover {
+  background: #1a5fb4;
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+.innfiller-fillall__add:active {
+  transform: scale(0.93);
+}
+
+.innfiller-fillall__add:focus-visible {
+  outline: 2px solid #1a73e8;
+  outline-offset: 2px;
+}
+
+/* --- Режим выбора поля --- */
+.innfiller-pickbar {
+  position: fixed;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2147483600;
+  padding: 8px 16px;
+  border-radius: 18px;
+  background: #1a5fb4;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  box-shadow: 0 4px 16px rgba(26, 95, 180, 0.4);
+  cursor: default;
+}
+
+.innfiller-pickbar,
+.innfiller-cfg,
+.innfiller-cfg * {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
+    Arial, sans-serif;
+}
+
+input.innfiller-pick-hover,
+textarea.innfiller-pick-hover {
+  outline: 3px solid #4a90e2 !important;
+  outline-offset: 1px;
+  cursor: crosshair !important;
+  box-shadow: 0 0 0 6px rgba(74, 144, 226, 0.25) !important;
+}
+
+/* --- Диалог настройки кастомного поля --- */
+.innfiller-cfg {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483640;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  padding: 0 16px 64px 0;
+  pointer-events: none; /* клики мимо карточки проходят на страницу */
+}
+
+.innfiller-cfg__card {
+  pointer-events: auto;
+  width: 340px;
+  max-width: calc(100vw - 32px);
+  max-height: calc(100vh - 96px);
+  overflow: auto;
+  box-sizing: border-box;
+  padding: 14px 16px 16px;
+  border-radius: 14px;
+  background: #ffffff;
+  color: #16191d;
+  font-size: 13px;
+  line-height: 1.45;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(0, 0, 0, 0.06);
+}
+
+.innfiller-cfg__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.innfiller-cfg__title {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.innfiller-cfg__close {
+  -webkit-appearance: none;
+  appearance: none;
+  border: 0;
+  background: none;
+  font-size: 20px;
+  line-height: 1;
+  color: #6b7280;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 6px;
+}
+
+.innfiller-cfg__close:hover {
+  background: rgba(0, 0, 0, 0.07);
+  color: #16191d;
+}
+
+.innfiller-cfg__info {
+  font-size: 11px;
+  color: #6b7280;
+  background: rgba(127, 127, 127, 0.1);
+  border-radius: 8px;
+  padding: 6px 9px;
+  margin-bottom: 10px;
+  word-break: break-word;
+}
+
+.innfiller-cfg__label {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #6b7280;
+  margin: 10px 0 4px;
+}
+
+.innfiller-cfg__input {
+  -webkit-appearance: none;
+  appearance: none;
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 7px 10px;
+  font-size: 13px;
+  border: 1px solid #d0d4d9;
+  border-radius: 8px;
+  background: #fff;
+  color: #16191d;
+}
+
+.innfiller-cfg__input:focus {
+  outline: 2px solid #1a73e8;
+  outline-offset: 0;
+  border-color: transparent;
+}
+
+.innfiller-cfg__script-area {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 12px;
+  resize: vertical;
+  min-height: 72px;
+}
+
+.innfiller-cfg__hint {
+  font-size: 11px;
+  color: #9aa3af;
+  margin-top: 5px;
+}
+
+.innfiller-cfg__row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.innfiller-cfg__test {
+  font-size: 12px;
+  color: #1e8e3e;
+  font-weight: 600;
+  word-break: break-all;
+}
+
+.innfiller-cfg__warn {
+  margin-top: 10px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  background: #fef7e0;
+  color: #7a5d00;
+  font-size: 12px;
+}
+
+.innfiller-cfg__error {
+  margin-top: 10px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  background: #fdeded;
+  color: #c5221f;
+  font-size: 12px;
+}
+
+.innfiller-cfg__foot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.innfiller-cfg__btn {
+  -webkit-appearance: none;
+  appearance: none;
+  border: 0;
+  border-radius: 8px;
+  padding: 7px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.innfiller-cfg__btn--primary {
+  background: #1a5fb4;
+  color: #fff;
+}
+
+.innfiller-cfg__btn--primary:hover {
+  background: #14509c;
+}
+
+.innfiller-cfg__btn--ghost {
+  background: rgba(127, 127, 127, 0.12);
+  color: #16191d;
+}
+
+.innfiller-cfg__btn--ghost:hover {
+  background: rgba(127, 127, 127, 0.2);
+}
+
+.innfiller-cfg__btn--danger {
+  background: none;
+  color: #c5221f;
+  padding-left: 8px;
+  padding-right: 8px;
+}
+
+.innfiller-cfg__btn--danger:hover {
+  text-decoration: underline;
+}
+
+.innfiller-cfg__btn:focus-visible {
+  outline: 2px solid #1a73e8;
+  outline-offset: 2px;
+}
+
+/* Тёмная тема диалога и режима выбора. */
+@media (prefers-color-scheme: dark) {
+  .innfiller-fillall__add {
+    background: #2a2e36;
+    color: #8ab4f8;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(138, 180, 248, 0.25);
+  }
+  .innfiller-fillall__add:hover {
+    background: #8ab4f8;
+    color: #15171b;
+  }
+  .innfiller-pickbar {
+    background: #2d6fc4;
+  }
+  .innfiller-cfg__card {
+    background: #1e2127;
+    color: #f3f5f7;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.08);
+  }
+  .innfiller-cfg__close {
+    color: #9aa3af;
+  }
+  .innfiller-cfg__close:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #f3f5f7;
+  }
+  .innfiller-cfg__info {
+    background: rgba(255, 255, 255, 0.06);
+    color: #9aa3af;
+  }
+  .innfiller-cfg__label {
+    color: #9aa3af;
+  }
+  .innfiller-cfg__input {
+    background: #15171b;
+    color: #f3f5f7;
+    border-color: #353a44;
+  }
+  .innfiller-cfg__btn--ghost {
+    background: rgba(255, 255, 255, 0.08);
+    color: #f3f5f7;
+  }
+  .innfiller-cfg__btn--ghost:hover {
+    background: rgba(255, 255, 255, 0.14);
+  }
+  .innfiller-cfg__btn--primary {
+    background: #2d6fc4;
+  }
+  .innfiller-cfg__btn--primary:hover {
+    background: #3a7fd4;
+  }
+  .innfiller-cfg__warn {
+    background: #3a3213;
+    color: #fdd663;
+  }
+  .innfiller-cfg__error {
+    background: #3b1f1f;
+    color: #f28b82;
+  }
+}
 /* --- Плавающая кнопка «Заполнить все» (низ страницы) --- */
 .innfiller-fillall {
   position: fixed;

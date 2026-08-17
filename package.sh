@@ -18,6 +18,8 @@ zip -r "$OUTPUT" . \
   -x "CHROMEWEBSTORE.md" \
   -x "README.md" \
   -x "PRIVACY.md" \
+  -x "LICENSE" \
+  -x ".gitignore" \
   -x "package.sh" \
   -x "store-assets/*" \
   -x "dev/*" \

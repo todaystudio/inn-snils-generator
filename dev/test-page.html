@@ -3,14 +3,14 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Тест авто-определения ИНН/СНИЛС</title>
+    <title>Тест авто-определения полей</title>
     <style>
       :root {
         color-scheme: light dark;
       }
       body {
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
-        max-width: 720px;
+        max-width: 760px;
         margin: 40px auto;
         padding: 0 20px;
         background: #f7f8fa;
@@ -21,8 +21,9 @@
         input { background: #1e2127; color: #f3f5f7; border-color: #353a44; }
       }
       h1 { font-size: 20px; }
+      h2 { font-size: 15px; margin: 28px 0 12px; color: #6b7280; text-transform: uppercase; letter-spacing: .04em; }
       p.note { color: #6b7280; font-size: 13px; line-height: 1.5; }
-      form { display: grid; gap: 16px; margin-top: 20px; }
+      form { display: grid; gap: 14px; margin-top: 20px; }
       .field { display: grid; gap: 4px; }
       label { font-size: 13px; font-weight: 600; }
       input {
@@ -32,7 +33,7 @@
         border-radius: 8px;
         background: #fff;
         color: #16191d;
-        width: 320px;
+        width: 340px;
       }
       .hint { font-size: 11px; color: #9aa3af; }
       code { background: rgba(127,127,127,.12); padding: 1px 5px; border-radius: 4px; font-size: 12px; }
@@ -43,15 +44,23 @@
     <p class="note">
       Откройте эту страницу по адресу <code>http://localhost:8000/dev/test-page.html</code>
       (запустите в папке проекта <code>python3 -m http.server 8000</code>), кликните на
-      иконку расширения → «Добавить этот сайт». Рядом с полями ИНН/СНИЛС должны появиться
-      кнопки-иконки: у ИНН — раскрываются в ФЛ/ЮЛ, у СНИЛС — одна кнопка.
+      иконку расширения → «Добавить этот сайт». Рядом с каждым распознанным полем
+      появляется кнопка «Заполнить»; у ИНН она раскрывается в ФЛ/ЮЛ.
+      Значения согласованы: один банк, одна организация, одно лицо на страницу.
     </p>
 
     <form onsubmit="return false">
+      <h2>Базовые поля</h2>
       <div class="field">
         <label for="f-inn">ИНН</label>
         <input id="f-inn" name="inn" type="text" placeholder="12 цифр" autocomplete="off" />
-        <span class="hint">name="inn" + &lt;label&gt;ИНН&lt;/label&gt;</span>
+        <span class="hint">name="inn" + &lt;label&gt;ИНН&lt;/label&gt; — раскрывается в ФЛ/ЮЛ</span>
+      </div>
+
+      <div class="field">
+        <label for="f-innkpp">ИНН/КПП</label>
+        <input id="f-innkpp" name="inn_kpp" type="text" />
+        <span class="hint">комбинированное поле — вставит «ИНН/КПП» одной строкой</span>
       </div>
 
       <div class="field">
@@ -70,29 +79,154 @@
         <span class="hint">aria-label="СНИЛС …"</span>
       </div>
 
+      <h2>Банковские реквизиты</h2>
       <div class="field">
-        <label>
-          ИНН индивидуального предпринимателя
-          <input name="entrepreneur_inn" type="text" />
-        </label>
-        <span class="hint">оборачивающий &lt;label&gt; с текстом «ИНН»</span>
+        <label for="f-bik">БИК</label>
+        <input id="f-bik" name="bik" type="text" />
+      </div>
+      <div class="field">
+        <label for="f-bankname">Наименование банка</label>
+        <input id="f-bankname" name="bank_name" type="text" />
+      </div>
+      <div class="field">
+        <label for="f-innbank">ИНН банка</label>
+        <input id="f-innbank" name="bank_inn" type="text" />
+        <span class="hint">обычный ИНН юрлица, согласованный с БИК и к/с</span>
+      </div>
+      <div class="field">
+        <label for="f-kppbank">КПП банка</label>
+        <input id="f-kppbank" name="bank_kpp" type="text" />
+      </div>
+      <div class="field">
+        <label for="f-rs">Расчётный счёт</label>
+        <input id="f-rs" name="raschetny_schet" type="text" />
+        <span class="hint">20 цифр, контрольный ключ по БИК</span>
+      </div>
+      <div class="field">
+        <label for="f-ks">Корреспондентский счёт</label>
+        <input id="f-ks" name="korr_schet" type="text" />
       </div>
 
+      <h2>Реквизиты организации</h2>
       <div class="field">
-        <input name="company_taxid" type="text" placeholder="Tax ID / ИНН" />
-        <span class="hint">placeholder содержит «ИНН» и «Tax ID»</span>
+        <label for="f-orgname">Наименование организации</label>
+        <input id="f-orgname" name="organization" type="text" />
+      </div>
+      <div class="field">
+        <label for="f-kpp">КПП</label>
+        <input id="f-kpp" name="kpp" type="text" />
+      </div>
+      <div class="field">
+        <label for="f-ogrn">ОГРН</label>
+        <input id="f-ogrn" name="ogrn" type="text" />
+      </div>
+      <div class="field">
+        <label for="f-ogrnip">ОГРНИП</label>
+        <input id="f-ogrnip" name="ogrnip" type="text" />
+      </div>
+      <div class="field">
+        <label for="f-okpo">ОКПО</label>
+        <input id="f-okpo" name="okpo" type="number" />
+      </div>
+      <div class="field">
+        <label for="f-oktmo">ОКТМО</label>
+        <input id="f-oktmo" name="oktmo" type="text" />
+      </div>
+      <div class="field">
+        <label for="f-okved">ОКВЭД</label>
+        <input id="f-okved" name="okved" type="text" />
       </div>
 
+      <h2>Персональные данные</h2>
       <div class="field">
-        <label for="f-other">Электронная почта</label>
-        <input id="f-other" name="email" type="email" />
-        <span class="hint">кнопки быть не должно (не ИНН/СНИЛС)</span>
+        <label for="f-fio">ФИО</label>
+        <input id="f-fio" name="fio" type="text" />
       </div>
-
+      <div class="field">
+        <label for="f-surname">Фамилия</label>
+        <input id="f-surname" name="lastname" type="text" />
+      </div>
+      <div class="field">
+        <label for="f-firstname">Имя</label>
+        <input id="f-firstname" name="firstname" type="text" />
+      </div>
+      <div class="field">
+        <label for="f-patr">Отчество</label>
+        <input id="f-patr" name="middlename" type="text" />
+      </div>
+      <div class="field">
+        <label for="f-email">Электронная почта</label>
+        <input id="f-email" name="email" type="email" autocomplete="email" />
+        <span class="hint">type=email + autocomplete=email — домены example.com (RFC 2606)</span>
+      </div>
       <div class="field">
         <label for="f-phone">Телефон</label>
-        <input id="f-phone" name="phone" type="tel" />
-        <span class="hint">кнопки быть не должно</span>
+        <input id="f-phone" name="phone" type="tel" maxlength="10" />
+        <span class="hint">maxlength=10 — вставится 10 цифр без +7</span>
+      </div>
+      <div class="field">
+        <label for="f-passport-series">Серия паспорта</label>
+        <input id="f-passport-series" name="passport_series" type="text" />
+      </div>
+      <div class="field">
+        <label for="f-passport-number">Номер паспорта</label>
+        <input id="f-passport-number" name="passport_number" type="text" />
+      </div>
+      <div class="field">
+        <label for="f-passport-code">Код подразделения</label>
+        <input id="f-passport-code" name="passport_code" placeholder="___-___" type="text" />
+      </div>
+      <div class="field">
+        <label for="f-passport-issuer">Кем выдан</label>
+        <input id="f-passport-issuer" name="passport_issuer" type="text" />
+      </div>
+      <div class="field">
+        <label for="f-birth-place">Место рождения</label>
+        <input id="f-birth-place" name="place_birth" type="text" />
+      </div>
+
+      <h2>Адрес</h2>
+      <div class="field">
+        <label for="f-zip">Индекс</label>
+        <input id="f-zip" name="zip_code" type="text" />
+        <span class="hint">согласован с городом</span>
+      </div>
+      <div class="field">
+        <label for="f-region">Регион</label>
+        <input id="f-region" name="region" type="text" />
+      </div>
+      <div class="field">
+        <label for="f-city">Город</label>
+        <input id="f-city" name="city" type="text" />
+      </div>
+      <div class="field">
+        <label for="f-street">Улица</label>
+        <input id="f-street" name="street" type="text" />
+      </div>
+      <div class="field">
+        <label for="f-house">Дом</label>
+        <input id="f-house" name="house" type="text" />
+      </div>
+      <div class="field">
+        <label for="f-apartment">Квартира</label>
+        <input id="f-apartment" name="apartment" type="text" />
+      </div>
+      <div class="field">
+        <label for="f-address">Адрес регистрации</label>
+        <input id="f-address" name="address" type="text" />
+        <span class="hint">полный адрес одной строкой</span>
+      </div>
+
+      <h2>Не заполняется</h2>
+      <div class="field">
+        <label for="f-card">Номер карты</label>
+        <input id="f-card" name="card_number" type="text" />
+        <span class="hint">карточные поля не трогаем</span>
+      </div>
+      <div class="field">
+        <label for="f-other">Комментарий</label>
+        <input id="f-other" name="comment" type="text" />
+        <span class="hint">нераспознанное поле — кнопки быть не должно</span>
       </div>
     </form>
   </body>

@@ -111,6 +111,10 @@
  * Менеджер сайтов: добавление/удаление текущего сайта в белый список.
  * По умолчанию расширение не работает ни на одном сайте — пользователь явно
  * добавляет нужный сайт, после чего на нём работает авто-определение полей.
+ *
+ * После подтверждения разрешения сайт попадает в список автоматически
+ * (background слушает permissions.onAdded) — даже если popup закрылся.
+ * Здесь же — мгновенная инъекция скрипта в текущую вкладку без перезагрузки.
  */
 (function () {
   "use strict";
@@ -120,7 +124,7 @@
   const siteStatus = document.getElementById("siteStatus");
   const siteBtn = document.getElementById("siteBtn");
 
-  const CONTENT_JS = ["lib/generators.js", "content/content.js"];
+  const CONTENT_JS = ["lib/data.js", "lib/generators.js", "content/content.js"];
   const CONTENT_CSS = ["content/content.css"];
 
   function sendMessage(msg) {
@@ -151,10 +155,18 @@
   }
 
   async function injectNow(tabId) {
-    // Активируем сразу на текущей странице, не дожидаясь перезагрузки.
+    // Активируем сразу на текущей странице (во все фреймы), не дожидаясь
+    // перезагрузки. Content-скрипт сам защищён от повторного запуска.
     try {
-      await chrome.scripting.executeScript({ target: { tabId }, files: CONTENT_JS });
-      await chrome.scripting.insertCSS({ target: { tabId }, files: CONTENT_CSS });
+      await chrome.scripting.executeScript({
+        target: { tabId, allFrames: true },
+        files: CONTENT_JS,
+        injectImmediately: true,
+      });
+      await chrome.scripting.insertCSS({
+        target: { tabId, allFrames: true },
+        files: CONTENT_CSS,
+      });
     } catch (err) {
       // Не критично: на следующей загрузке сработает зарегистрированный скрипт.
       console.warn("[inn-filler] не удалось внедрить сразу:", err);
@@ -165,9 +177,15 @@
     siteBtn.disabled = true;
     try {
       if (!isAllowed) {
-        // Запрос разрешения только для этого сайта (нужен user-gesture — клик).
-        const granted = await chrome.permissions.request({ origins: [pattern] });
-        if (!granted) return;
+        // Если разрешение уже выдано (сайт когда-то добавляли) — диалог не нужен.
+        const already = await chrome.permissions.contains({ origins: [pattern] });
+        if (!already) {
+          // Запрос разрешения только для этого сайта (нужен user-gesture — клик).
+          const granted = await chrome.permissions.request({ origins: [pattern] });
+          if (!granted) return; // пользователь отказал — сайт не добавляем
+        }
+        // Дальше сайт добавится при любом исходе: background слушает
+        // permissions.onAdded, сообщение — дублирующий путь.
         await sendMessage({ type: "ADD_SITE", pattern });
         await injectNow(tab.id);
         render(true);
@@ -178,6 +196,10 @@
       }
     } catch (err) {
       console.error("[inn-filler] ошибка переключения сайта:", err);
+      // Перерисовываем по фактическому состоянию — возможно, всё уже сработало.
+      const res = await sendMessage({ type: "GET_STATE" });
+      const allowed = Array.isArray(res?.allowedSites) ? res.allowedSites : [];
+      render(allowed.includes(pattern));
     } finally {
       siteBtn.disabled = false;
     }

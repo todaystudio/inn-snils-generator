@@ -1,9 +1,13 @@
 /*
- * Content script: авто-определение полей ИНН/СНИЛС и кнопка-вставка рядом.
+ * Content script: авто-определение полей и кнопка-вставка рядом.
  *
  * Грузится ТОЛЬКО на сайтах, добавленных пользователем (динамическая регистрация
- * из background/sw.js). Здесь — поиск полей, плавающие чипы, вставка значения
- * с учётом React/Vue (нативный setter + события input/change).
+ * из background/sw.js). Здесь — поиск полей по name/id/placeholder/label,
+ * плавающие чипы («Заполнить» / ФЛ·ЮЛ), вставка значения с учётом
+ * React/Vue (нативный setter + события input/change).
+ *
+ * Значения берутся из согласованного профиля страницы (RusID.getProfile):
+ * одна страница = одно лицо, один банк, одна организация, один адрес.
  *
  * RusID доступен глобально из lib/generators.js (тот же изолированный мир).
  */
@@ -28,14 +32,51 @@
     '<path d="M5 12.5l4.5 4.5L19 7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
   // --- Типы полей, в которые имеет смысл подставлять ---
-  const ALLOWED_TYPES = new Set(["text", "tel", "number", "search", "", undefined, null]);
+  const ALLOWED_TYPES = new Set(["text", "tel", "number", "search", "email", "", undefined, null]);
 
   // --- Геометрия ---
   const ICON = 24; // диаметр круглой иконки
   const GAP_INPUT = 6; // отступ чипа от внешнего края поля
-  const GAP_INNER = 5; // зазор между иконкой и кнопками ФЛ/ЮЛ
+  const GAP_INNER = 5; // зазор между иконкой и кнопками ФЛ/ЮЛ / подписью
   const EXPAND_W = 76; // ширина раскрытого блока ФЛ/ЮЛ
+  const LABEL_W = 96; // ширина подписи «Заполнить»
   const VP_MARGIN = 12; // запас, чтобы считать поле «во вьюпорте»
+
+  // --- Подписи и подсказки по типам полей ---
+  const KIND_TITLES = {
+    snils: "Вставить СНИЛС",
+    innKpp: "Вставить ИНН/КПП организации",
+    innBank: "Вставить ИНН банка (10 цифр)",
+    bik: "Вставить БИК банка",
+    ks: "Вставить корреспондентский счёт (20 цифр)",
+    rs: "Вставить расчётный счёт (20 цифр)",
+    kpp: "Вставить КПП (9 цифр)",
+    ogrn: "Вставить ОГРН (13 цифр)",
+    ogrnip: "Вставить ОГРНИП (15 цифр)",
+    okpo: "Вставить ОКПО",
+    oktmo: "Вставить ОКТМО",
+    okved: "Вставить код ОКВЭД",
+    bankName: "Вставить название банка",
+    companyName: "Вставить наименование организации",
+    fio: "Вставить ФИО",
+    surname: "Вставить фамилию",
+    firstName: "Вставить имя",
+    patronymic: "Вставить отчество",
+    city: "Вставить город",
+    region: "Вставить регион",
+    street: "Вставить улицу",
+    house: "Вставить дом",
+    apartment: "Вставить квартиру",
+    zip: "Вставить почтовый индекс",
+    address: "Вставить адрес",
+    email: "Вставить e-mail",
+    phone: "Вставить телефон",
+    passportSeries: "Вставить серию паспорта",
+    passportNumber: "Вставить номер паспорта",
+    passportCode: "Вставить код подразделения",
+    passportIssuer: "Вставить, кем выдан паспорт",
+    passport: "Вставить серию и номер паспорта",
+  };
 
   // --- Распознавание ---
   function labelTextFor(input) {
@@ -80,11 +121,74 @@
     return parts.join(" ");
   }
 
+  // Правила распознавания: [регэксп на сигнатуру поля, тип]. Порядок важен —
+  // от частных к общим (например, «ИНН банка» раньше «ИНН», «к/с» раньше «счёт»).
+  const CARD_RE = /карт|card|iban|swift|cvv|cvc/;
+  const RULES = [
+    [/снилс|\bsnils\b/, "snils"],
+    [/инн[^]{0,12}банк|банк[^]{0,12}инн/, "innBank"],
+    [/инн[^]{0,6}кпп|кпп[^]{0,6}инн/, "innKpp"],
+    [/инн|\binn\b|\btax_?id\b|\btaxpayer\b/, "inn"],
+    [/корреспондент|корсч[её]т|к\s*\/\s*с|(^|\s)кс(\s|$)|\bks\b|corr(espondent)?/, "ks"],
+    [/расч[её]тн|р\s*\/\s*с|\brs\b|settlement/, "rs"],
+    [/сч[её]т|account/, "rs"],
+    [/бик|\bbik\b/, "bik"],
+    [/кпп|\bkpp\b/, "kpp"],
+    [/огрнип|\bogrnip\b/, "ogrnip"],
+    [/огрн|\bogrn\b/, "ogrn"],
+    [/окпо|\bokpo\b/, "okpo"],
+    [/октмо|\boktmo\b/, "oktmo"],
+    [/оквэд|\bokved\b/, "okved"],
+    [/наименован[^]{0,24}банк|назван[^]{0,24}банк|банк[^]{0,24}(наименован|названи)|банк[^]{0,12}получател|получател[^]{0,12}банк|(^|\s)банк(а|е)?(\s|$)|bank\s*name/, "bankName"],
+    [/e-?mail|имейл|емейл|электронн[^]{0,24}почт|\bmail\b/, "email"],
+    [/телефон|phone|\btel\b|мобильн|сотов|домашн|факс/, "phone"],
+    [/фио|ф\s*\.\s*и\s*\.\s*о|full\s*name/, "fio"],
+    [/фамил|surname|last\s*name|family\s*name/, "surname"],
+    [/отчеств|patronym|middle\s*name/, "patronymic"],
+    [/имя|\bname\b|first\s*name|given\s*name/, "firstName"],
+    // Адрес: сначала частные поля, общий «адрес» — последним, иначе id вроде
+    // "main_address.Registration.region" перехватывает правило целиком.
+    [/место\s*рожден|birth\s*place/, "city"],
+    [/город|\bcity\b|\btown\b|насел[её]нн/, "city"],
+    [/регион|област|субъект|республик|(^|\s)край(\s|$)|округ/, "region"],
+    [/район|district/, null], // район — не городской адрес, не заполняем
+    [/улиц|проспект|просп\.|пр-кт|бульвар|переулок|шоссе|набережн|проезд|\bstreet\b/, "street"],
+    [/строение|корпус|здание|house|building|(^|[^а-яё])дом([^еи]|$)/, "house"],
+    [/квартир|помещен|\bflat\b|\bapart|\bunit\b/, "apartment"],
+    [/индекс|\bzip\b|postal(\s*code)?/, "zip"],
+    [/адрес|address/, "address"],
+    // Паспорт: комбинированные и контекстные правила раньше общих.
+    [/серия[^]{0,16}номер|номер[^]{0,16}серия/, "passport"],
+    [/номер[^]{0,12}паспорт|паспорт[^]{0,12}номер|passport.{0,8}num/, "passportNumber"],
+    [/серия/, "passportSeries"],
+    [/код[^]{0,8}подразделен|подразделен|passport.{0,8}code/, "passportCode"],
+    [/кем\s*выдан|passport.{0,8}issuer/, "passportIssuer"],
+    [/паспорт|passport/, "passport"],
+    [/наименование|организац|компани|предприят|юр[.\s]*лиц|получател|фирм|контрагент|organization|company/, "companyName"],
+  ];
+  // Правила для полей банковских карт не применяем — это вне сценария
+  // тестовых реквизитов (номер карты, БИН и т.п.).
+
   function detectKind(signal) {
-    if (/снилс/i.test(signal) || /\bsnils\b/i.test(signal)) return "snils";
-    if (/инн/i.test(signal) || /\binn\b/i.test(signal) || /\btax_?id\b/i.test(signal) || /\btaxpayer\b/i.test(signal))
-      return "inn";
+    if (!signal) return null;
+    const isCard = CARD_RE.test(signal);
+    for (const [re, kind] of RULES) {
+      if (!re.test(signal)) continue;
+      // «Банк» в сигнатуре карточных полей («банковская карта») не считается
+      if (kind === "bankName" && isCard) continue;
+      if (isCard && kind !== "snils") return null; // карточные поля не заполняем
+      return kind;
+    }
     return null;
+  }
+
+  // Вариант контекста: банковские поля vs обычные, ИП vs ЮЛ, дом без корпуса.
+  function detectVariant(signal) {
+    return {
+      bank: /банк|филиал/.test(signal),
+      ip: /(^|\s)ип(\s|$)|индивидуальн\s*предпринимател/.test(signal),
+      housePlain: /строение|корпус|здание/.test(signal),
+    };
   }
 
   function isCandidate(input) {
@@ -114,88 +218,175 @@
     }
   }
 
-  function generate(kind) {
-    if (kind === "snils") return RusID.generateSnils();
-    if (kind === "ul") return RusID.formatInn(RusID.generateInnUl());
-    return RusID.formatInn(RusID.generateInnFl()); // fl & ip — один формат
+  function valueFor(kind, variant) {
+    if (!RusID.fill) return null;
+    if (kind === "inn") return null; // обрабатывается кнопками ФЛ/ЮЛ отдельно
+    return RusID.fill(kind, variant);
   }
 
   // --- Создание чипа ---
+  // «inn» — раскрывающийся чип с кнопками ФЛ/ЮЛ, остальные — пилюля «Заполнить».
   function buildChip(kind) {
     const root = document.createElement("div");
     root.className = "innfiller-chip innfiller-chip--" + kind;
 
-    if (kind === "snils") {
-      const btn = document.createElement("button");
-      btn.type = "button";
-      btn.className = "innfiller-chip__main innfiller-chip__main--btn";
-      btn.title = "Вставить СНИЛС";
-      btn.setAttribute("aria-label", "Вставить СНИЛС");
-      btn.innerHTML = '<span class="innfiller-icon">' + SPARKLE_SVG + "</span>" +
+    if (kind === "inn") {
+      root.classList.add("innfiller-chip--inn");
+      root.setAttribute("role", "group");
+      root.setAttribute("aria-label", "Вставить ИНН");
+
+      const expand = document.createElement("div");
+      expand.className = "innfiller-chip__expand";
+
+      const fl = document.createElement("button");
+      fl.type = "button";
+      fl.className = "innfiller-sub";
+      fl.dataset.kind = "fl";
+      fl.title = "ИНН физического лица / ИП — 12 цифр";
+      fl.textContent = "ФЛ";
+
+      const ul = document.createElement("button");
+      ul.type = "button";
+      ul.className = "innfiller-sub";
+      ul.dataset.kind = "ul";
+      ul.title = "ИНН юридического лица — 10 цифр";
+      ul.textContent = "ЮЛ";
+
+      expand.appendChild(fl);
+      expand.appendChild(ul);
+
+      const main = document.createElement("span");
+      main.className = "innfiller-chip__main";
+      main.title = "Вставить ИНН";
+      main.innerHTML = '<span class="innfiller-icon">' + SPARKLE_SVG + "</span>" +
         '<span class="innfiller-icon innfiller-icon--ok">' + CHECK_SVG + "</span>";
-      btn.addEventListener("click", (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        insertInto(btn, "snils");
-      });
-      root.appendChild(btn);
+
+      [fl, ul].forEach((b) =>
+        b.addEventListener("click", (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          insertInto(b, b.dataset.kind === "fl" ? "innFl" : "innUl");
+        })
+      );
+
+      root.appendChild(expand);
+      root.appendChild(main);
       return root;
     }
 
-    // INN: раскрывающийся чип
-    root.setAttribute("role", "group");
-    root.setAttribute("aria-label", "Вставить ИНН");
-
-    const expand = document.createElement("div");
-    expand.className = "innfiller-chip__expand";
-
-    const fl = document.createElement("button");
-    fl.type = "button";
-    fl.className = "innfiller-sub";
-    fl.dataset.kind = "fl";
-    fl.title = "ИНН физлица / ИП — 12 цифр";
-    fl.textContent = "ФЛ";
-
-    const ul = document.createElement("button");
-    ul.type = "button";
-    ul.className = "innfiller-sub";
-    ul.dataset.kind = "ul";
-    ul.title = "ИНН юрлица — 10 цифр";
-    ul.textContent = "ЮЛ";
-
-    expand.appendChild(fl);
-    expand.appendChild(ul);
-
-    const main = document.createElement("span");
-    main.className = "innfiller-chip__main";
-    main.title = "Вставить ИНН";
-    main.innerHTML = '<span class="innfiller-icon">' + SPARKLE_SVG + "</span>" +
-      '<span class="innfiller-icon innfiller-icon--ok">' + CHECK_SVG + "</span>";
-
-    [fl, ul].forEach((b) =>
-      b.addEventListener("click", (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        insertInto(b, b.dataset.kind);
-      })
-    );
-
-    root.appendChild(expand);
-    root.appendChild(main);
+    // Однокнопочный чип «Заполнить».
+    root.classList.add("innfiller-chip--single");
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "innfiller-chip__main innfiller-chip__main--btn";
+    btn.title = KIND_TITLES[kind] || "Заполнить";
+    btn.setAttribute("aria-label", KIND_TITLES[kind] || "Заполнить");
+    btn.innerHTML =
+      '<span class="innfiller-icon">' + SPARKLE_SVG + "</span>" +
+      '<span class="innfiller-icon innfiller-icon--ok">' + CHECK_SVG + "</span>" +
+      '<span class="innfiller-chip__label">Заполнить</span>';
+    btn.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      insertInto(btn, kind);
+    });
+    root.appendChild(btn);
     return root;
-  }
-
-  // Найти целевой input: для INN-чипа — по привязке, для СНИЛС — это сама кнопка.
-  function chipTargetInput(chip) {
-    return chip.__innfillerInput || null;
   }
 
   function insertInto(btn, kind) {
     const chip = btn.closest(".innfiller-chip");
-    const input = chipTargetInput(chip);
+    const input = chip.__innfillerInput;
+    const variant = Object.assign({}, chip.__innfillerVariant);
     if (!input) return;
-    setValue(input, generate(kind));
+    // maxLength поля (0 = не задан/велик) — генератор подберёт компактный формат
+    const ml = input.maxLength;
+    if (ml > 0 && ml < 100) variant.maxLen = ml;
+    const value = valueFor(kind, variant);
+    if (value === null || value === undefined) return;
+    setValue(input, String(value));
     flashDone(chip);
+  }
+
+  // --- «Заполнить все»: одна кнопка на все найденные поля страницы ---
+  // Для полей ИНН формат выбирается по контексту: если на форме есть
+  // реквизиты организации (ОГРН, БИК, счёт…) — ЮЛ, иначе ФЛ.
+  const COMPANY_KINDS = new Set([
+    "ogrn", "ogrnip", "bik", "ks", "rs", "okpo", "oktmo", "okved",
+    "companyName", "innBank", "innKpp", "kpp", "bankName",
+  ]);
+
+  function fillAll() {
+    let preferUl = false;
+    for (const input of tracked.keys()) {
+      if (COMPANY_KINDS.has(input.dataset.innfiller)) {
+        preferUl = true;
+        break;
+      }
+    }
+    let filled = 0;
+    for (const [input, chip] of tracked) {
+      if (!document.documentElement.contains(input)) continue;
+      if (input.disabled || input.readOnly) continue;
+      const kind = input.dataset.innfiller;
+      const fillKind = kind === "inn" ? (preferUl ? "innUl" : "innFl") : kind;
+      const variant = Object.assign({}, chip.__innfillerVariant);
+      const ml = input.maxLength;
+      if (ml > 0 && ml < 100) variant.maxLen = ml;
+      const value = RusID.fill ? RusID.fill(fillKind, variant) : null;
+      if (value === null || value === undefined) continue;
+      setValue(input, String(value));
+      flashDone(chip);
+      filled++;
+    }
+    return filled;
+  }
+
+  let fillAllTimer = null;
+
+  function buildFillAll() {
+    const root = document.createElement("div");
+    root.className = "innfiller-fillall";
+    root.style.display = "none";
+
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "innfiller-fillall__btn";
+    btn.title = "Заполнить все найденные поля страницы";
+    btn.setAttribute("aria-label", "Заполнить все найденные поля страницы");
+    btn.innerHTML =
+      '<span class="innfiller-icon">' + SPARKLE_SVG + "</span>" +
+      '<span class="innfiller-icon innfiller-icon--ok">' + CHECK_SVG + "</span>" +
+      '<span class="innfiller-fillall__label">Заполнить все · <span class="innfiller-fillall__count">0</span></span>' +
+      '<span class="innfiller-fillall__done-label"></span>';
+
+    btn.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const filled = fillAll();
+      if (!filled) return;
+      root.classList.add("is-done");
+      root.querySelector(".innfiller-fillall__done-label").textContent =
+        "Заполнено: " + filled;
+      window.clearTimeout(fillAllTimer);
+      fillAllTimer = window.setTimeout(() => root.classList.remove("is-done"), 1400);
+    });
+
+    root.appendChild(btn);
+    return root;
+  }
+
+  const fillAllRoot = buildFillAll();
+  document.body.appendChild(fillAllRoot);
+
+  function updateFillAll() {
+    // Кнопка видна, только если на странице есть распознанные поля.
+    let live = 0;
+    for (const input of tracked.keys()) {
+      if (document.documentElement.contains(input) && !input.disabled && !input.readOnly) live++;
+    }
+    fillAllRoot.style.display = live > 0 ? "" : "none";
+    fillAllRoot.querySelector(".innfiller-fillall__count").textContent = String(live);
   }
 
   function flashDone(chip) {
@@ -206,23 +397,22 @@
   // --- Реестр отслеживаемых полей ---
   const tracked = new Map(); // input -> chip
 
-  function attachChip(input, kind) {
+  function attachChip(input, kind, variant) {
     input.dataset.innfiller = kind; // маркер, чтобы не обработать повторно
     const chip = buildChip(kind);
     chip.__innfillerInput = input;
+    chip.__innfillerVariant = variant;
     chip.style.display = "none"; // скрыт до первого позиционирования в relayout
     document.body.appendChild(chip);
 
     // Раскрытие по фокусу на поле (клавиатура + надёжность при blur→click).
-    if (kind === "inn") {
-      input.addEventListener("focus", () => chip.classList.add("is-open"));
-      input.addEventListener("blur", () => {
-        // Небольшая задержка, чтобы клик по ФЛ/ЮЛ успел сработать после blur.
-        setTimeout(() => {
-          if (!chip.matches(":hover")) chip.classList.remove("is-open");
-        }, 150);
-      });
-    }
+    input.addEventListener("focus", () => chip.classList.add("is-open"));
+    input.addEventListener("blur", () => {
+      // Небольшая задержка, чтобы клик по кнопке успел сработать после blur.
+      setTimeout(() => {
+        if (!chip.matches(":hover")) chip.classList.remove("is-open");
+      }, 150);
+    });
 
     tracked.set(input, chip);
   }
@@ -235,9 +425,10 @@
       if (tracked.has(input)) continue;
       if (input.dataset.innfiller) continue;
       if (!isCandidate(input)) continue;
-      const kind = detectKind(fieldSignal(input));
+      const signal = fieldSignal(input);
+      const kind = detectKind(signal);
       if (!kind) continue;
-      attachChip(input, kind);
+      attachChip(input, kind, detectVariant(signal));
     }
     // Чистим отвалившиеся поля
     for (const [input, chip] of tracked) {
@@ -267,9 +458,11 @@
       // Вертикаль — по центру поля (transform: translateY(-50%) доворачивает).
       chip.style.top = r.top + r.height / 2 + "px";
 
-      // Сколько места нужно снаружи поля: для ИНН — с учётом раскрытия ФЛ/ЮЛ.
-      const isSnils = chip.classList.contains("innfiller-chip--snils");
-      const need = isSnils ? ICON + GAP_INPUT : ICON + GAP_INNER + EXPAND_W + GAP_INPUT;
+      // Сколько места нужно снаружи поля с учётом раскрытия.
+      const isSingle = chip.classList.contains("innfiller-chip--single");
+      const need = isSingle
+        ? ICON + GAP_INNER + LABEL_W + GAP_INPUT
+        : ICON + GAP_INNER + EXPAND_W + GAP_INPUT;
       const spaceRight = vw - r.right;
       const spaceLeft = r.left;
       let side;
@@ -309,6 +502,7 @@
     scheduled = false;
     scan();
     relayout();
+    updateFillAll();
   }
   function schedule() {
     if (scheduled) return;
@@ -327,11 +521,13 @@
   // requestAnimationFrame ещё не сработал или приторможен (фоновые вкладки).
   scan();
   relayout();
+  updateFillAll();
 
   // Периодическая подстраховка для SPA/анимаций layout и фоновых вкладок,
   // где rAF может быть приостановлен. Работает напрямую, минуя rAF.
   setInterval(() => {
     scan();
     relayout();
+    updateFillAll();
   }, 1500);
 })();

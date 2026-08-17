@@ -2,11 +2,11 @@
 
 # ИНН / СНИЛС генератор
 
-**Расширение для Chrome: валидные тестовые номера ИНН и СНИЛС одним кликом**
+**Расширение для Chrome: валидные тестовые реквизиты — ИНН, СНИЛС, банковские счета, ФИО и адреса**
 
 [![Chrome MV3](https://img.shields.io/badge/Chrome-Manifest%20V3-4285F4?logo=googlechrome&logoColor=white)](https://developer.chrome.com/docs/extensions/develop/migrate)
 [![Лицензия: MIT](https://img.shields.io/badge/%D0%9B%D0%B8%D1%86%D0%B5%D0%BD%D0%B7%D0%B8%D1%8F-MIT-green)](LICENSE)
-[![Версия](https://img.shields.io/badge/версия-1.1.0-blue)](../../releases)
+[![Версия](https://img.shields.io/badge/версия-1.2.0-blue)](../../releases)
 
 [Возможности](#возможности) · [Установка](#установка) · [Автозаполнение на сайтах](#автозаполнение-на-сайтах-opt-in) · [Приватность](#приватность) · [Разработка](#разработка)
 
@@ -14,10 +14,13 @@
 
 ---
 
-Генерирует **корректные** номера ИНН (физлица, ИП, юрлица) и СНИЛС — с правильными
-контрольными числами по методике ФНС и ПФР. Значения выглядят настоящими и проходят
-проверку валидаторов, но остаются вымышленными: они подходят для **тестирования** форм,
-вёрстки, демонстраций и плейсхолдеров — и не принадлежат реальным людям или организациям.
+Генерирует **корректные** тестовые значения: номера ИНН (физлица, ИП, юрлица) и СНИЛС
+с контрольными числами по методике ФНС и ПФР, а также полный набор реквизитов — ОГРН,
+ОГРНИП, КПП, БИК, ОКПО, расчётные и корреспондентские счета (контрольный ключ по
+методике ЦБ РФ), ФИО, адреса, телефоны и e-mail. Значения выглядят настоящими и
+проходят проверку валидаторов, но остаются вымышленными: они подходят для
+**тестирования** форм, вёрстки, демонстраций и плейсхолдеров — и не принадлежат
+реальным людям или организациям.
 
 | Светлая тема | Тёмная тема |
 |:---:|:---:|
@@ -35,12 +38,29 @@
 - Горячие клавиши: `R` — новое значение, `C` — копировать
 
 **Автозаполнение на сайтах (opt-in):**
-- Расширение само находит поля ИНН/СНИЛС — по `name`, `id`, `placeholder`,
-  `aria-label`, `autocomplete` и тексту связанного `<label>`
-- Рядом с полем появляется компактная кнопка; при наведении она раскрывается
-  в две — **ФЛ** (12 цифр) и **ЮЛ** (10 цифр). У поля СНИЛС — одна кнопка
-- Вставка совместима с React/Vue/Angular (нативный setter + события)
-- Новые поля в динамических SPA подхватываются автоматически
+- Расширение само находит поля — по `name`, `id`, `placeholder`, `aria-label`,
+  `autocomplete` и тексту связанного `<label>`
+- **Банковские реквизиты:** БИК, расчётный и корреспондентский счёт (20 цифр с
+  контрольным ключом по БИК), ИНН/КПП банка, название банка, а также ОГРН, ОГРНИП,
+  КПП, ОКПО, ОКТМО, ОКВЭД, наименование организации, поле «ИНН/КПП» одной строкой
+- **Персональные данные:** ФИО, фамилия, имя, отчество, СНИЛС, паспорт (серия,
+  номер), телефон, e-mail (домены `example.com` — письма не уйдут реальным адресатам)
+- **Адрес:** индекс, регион, город, улица, дом, квартира и полный адрес
+- **«Заполнить все» одной кнопкой:** в углу страницы появляется плавающая кнопка
+  со счётчиком найденных полей — один клик заполняет их все согласованными
+  значениями. Для полей ИНН формат выбирается по контексту формы: если на
+  странице есть реквизиты организации (ОГРН, БИК, счёт) — подставляется ИНН
+  юрлица, иначе физлица
+- Рядом с полем появляется компактная кнопка-иконка; при наведении или фокусе
+  она раскрывается в пилюлю **«Заполнить»**. У поля ИНН — выбор **ФЛ** (12 цифр)
+  или **ЮЛ** (10 цифр)
+- Значения на странице **согласованы**: одна страница = одно лицо, одна
+  организация, один банк, один адрес (регион ИНН совпадает с КПП и индексом,
+  к/с и р/с проходят ключевание по одному БИК). Перезагрузите страницу, чтобы
+  получить новый набор
+- Поля банковских карт не трогаем; вставка совместима с React/Vue/Angular
+  (нативный setter + события); новые поля в динамических SPA подхватываются
+  автоматически, включая iframe на добавленном домене
 
 ## Установка
 
@@ -54,7 +74,7 @@
 
 ### Готовым пакетом из релизов
 
-На странице [Releases](../../releases) скачайте `inn-snils-generator-v1.1.0.zip`,
+На странице [Releases](../../releases) скачайте `inn-snils-generator-v1.2.0.zip`,
 распакуйте и подключите папку так же, как в пунктах 2–5 выше.
 
 ## Автозаполнение на сайтах (opt-in)
@@ -66,7 +86,10 @@
 2. В popup нажмите **«Добавить этот сайт»**
 3. Chrome запросит разрешение **только для этого домена** — подтвердите
 
-После этого на сайте рядом с полями ИНН/СНИЛС появляются кнопки вставки:
+После подтверждения сайт добавляется **всегда автоматически** (даже если popup
+успел закрыться) и расширение сразу начинает работать на открытой странице,
+не дожидаясь перезагрузки. Рядом с распознанными полями появляются кнопки
+«Заполнить»:
 
 ![Автозаполнение полей на сайте](store-assets/autofill-demo.png)
 
@@ -105,7 +128,8 @@ node -e "console.log(require('./lib/generators.js').selfTest(10000))"
 ```
 ├── manifest.json          # манифест MV3
 ├── lib/
-│   └── generators.js      # генерация + валидация ИНН/СНИЛС (UMD)
+│   ├── data.js            # датасеты: ФИО, города, улицы, банки (UMD)
+│   └── generators.js      # генерация + валидация реквизитов, профиль страницы (UMD)
 ├── background/
 │   └── sw.js              # белый список сайтов, регистрация content-скрипта
 ├── content/
@@ -128,14 +152,18 @@ node -e "console.log(require('./lib/generators.js').selfTest(10000))"
 <details>
 <summary><b>English</b></summary>
 
-Chrome extension (MV3) that generates **valid-looking test values** for Russian
-taxpayer IDs (INN — individuals, sole proprietors, legal entities) and insurance
-account numbers (SNILS), with correct checksums per the official FNS/PFR method.
-All values are fictional and meant for testing forms and layouts only.
+Chrome extension (MV3) that generates **valid-looking test values**: Russian
+taxpayer IDs (INN), insurance account numbers (SNILS), company registration
+numbers (OGRN/OGRNIP, KPP, OKPO), bank details (BIK, settlement and
+correspondent accounts with a Central-Bank-style check key), Russian names,
+addresses, phones and e-mails. All checksums are computed per official methods;
+all values are fictional and meant for testing forms and layouts only.
 
 Optional opt-in autofill: add a specific site from the popup, and the extension
-detects INN/SNILS fields there and offers one-click insertion next to them.
-Zero host permissions by default; no data collection, fully offline.
+detects known field types there (by name, label, placeholder and other
+attributes) and offers a one-click «Заполнить» button next to them. Values are
+consistent across the page (one person, one company, one bank). Zero host
+permissions by default; no data collection, fully offline.
 
 </details>
 

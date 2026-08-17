@@ -1,0 +1,14 @@
+# macOS
+.DS_Store
+
+# Локальные артефакты ассистента
+.zcode/
+
+# Собранные пакеты (см. Releases)
+*.zip
+
+# Node
+node_modules/
+
+# Временные файлы скриншотов
+store-assets/_shot*.html

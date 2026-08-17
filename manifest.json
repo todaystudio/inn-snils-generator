@@ -1,0 +1,25 @@
+{
+  "manifest_version": 3,
+  "name": "ИНН / СНИЛС генератор",
+  "version": "1.1.0",
+  "description": "Генерирует корректные ИНН (ФЛ, ИП, ЮЛ) и СНИЛС с правильными контрольными числами для тестирования. По желанию — авто-определение полей ИНН/СНИЛС на добавленных сайтах и кнопка-вставка рядом с полем.",
+  "icons": {
+    "16": "icons/icon-16.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_title": "Сгенерировать ИНН / СНИЛС",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "48": "icons/icon-48.png",
+      "128": "icons/icon-128.png"
+    }
+  },
+  "background": {
+    "service_worker": "background/sw.js"
+  },
+  "permissions": ["storage", "scripting", "activeTab"],
+  "optional_host_permissions": ["http://*/*", "https://*/*"]
+}

@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Тест авто-определения ИНН/СНИЛС</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+      }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+        max-width: 720px;
+        margin: 40px auto;
+        padding: 0 20px;
+        background: #f7f8fa;
+        color: #16191d;
+      }
+      @media (prefers-color-scheme: dark) {
+        body { background: #15171b; color: #f3f5f7; }
+        input { background: #1e2127; color: #f3f5f7; border-color: #353a44; }
+      }
+      h1 { font-size: 20px; }
+      p.note { color: #6b7280; font-size: 13px; line-height: 1.5; }
+      form { display: grid; gap: 16px; margin-top: 20px; }
+      .field { display: grid; gap: 4px; }
+      label { font-size: 13px; font-weight: 600; }
+      input {
+        padding: 9px 11px;
+        font-size: 14px;
+        border: 1px solid #d0d4d9;
+        border-radius: 8px;
+        background: #fff;
+        color: #16191d;
+        width: 320px;
+      }
+      .hint { font-size: 11px; color: #9aa3af; }
+      code { background: rgba(127,127,127,.12); padding: 1px 5px; border-radius: 4px; font-size: 12px; }
+    </style>
+  </head>
+  <body>
+    <h1>Стенд для проверки авто-определения</h1>
+    <p class="note">
+      Откройте эту страницу по адресу <code>http://localhost:8000/dev/test-page.html</code>
+      (запустите в папке проекта <code>python3 -m http.server 8000</code>), кликните на
+      иконку расширения → «Добавить этот сайт». Рядом с полями ИНН/СНИЛС должны появиться
+      кнопки-иконки: у ИНН — раскрываются в ФЛ/ЮЛ, у СНИЛС — одна кнопка.
+    </p>
+
+    <form onsubmit="return false">
+      <div class="field">
+        <label for="f-inn">ИНН</label>
+        <input id="f-inn" name="inn" type="text" placeholder="12 цифр" autocomplete="off" />
+        <span class="hint">name="inn" + &lt;label&gt;ИНН&lt;/label&gt;</span>
+      </div>
+
+      <div class="field">
+        <label for="f-snils">СНИЛС</label>
+        <input id="f-snils" name="snils" type="text" />
+        <span class="hint">name="snils" + &lt;label&gt;СНИЛС&lt;/label&gt;</span>
+      </div>
+
+      <div class="field">
+        <input name="tax_id" type="tel" placeholder="Введите ИНН организации" />
+        <span class="hint">name="tax_id", type=tel, placeholder «ИНН»</span>
+      </div>
+
+      <div class="field">
+        <input id="f-aria" type="text" aria-label="СНИЛС застрахованного" />
+        <span class="hint">aria-label="СНИЛС …"</span>
+      </div>
+
+      <div class="field">
+        <label>
+          ИНН индивидуального предпринимателя
+          <input name="entrepreneur_inn" type="text" />
+        </label>
+        <span class="hint">оборачивающий &lt;label&gt; с текстом «ИНН»</span>
+      </div>
+
+      <div class="field">
+        <input name="company_taxid" type="text" placeholder="Tax ID / ИНН" />
+        <span class="hint">placeholder содержит «ИНН» и «Tax ID»</span>
+      </div>
+
+      <div class="field">
+        <label for="f-other">Электронная почта</label>
+        <input id="f-other" name="email" type="email" />
+        <span class="hint">кнопки быть не должно (не ИНН/СНИЛС)</span>
+      </div>
+
+      <div class="field">
+        <label for="f-phone">Телефон</label>
+        <input id="f-phone" name="phone" type="tel" />
+        <span class="hint">кнопки быть не должно</span>
+      </div>
+    </form>
+  </body>
+</html>

@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Харнес content-скрипта (без расширения)</title>
+    <link rel="stylesheet" href="../content/content.css" />
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+        background: #f7f8fa;
+        color: #16191d;
+        padding: 40px;
+      }
+      h1 { font-size: 18px; margin-bottom: 20px; }
+      .row { margin-bottom: 22px; }
+      label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+      input {
+        padding: 10px 12px;
+        font-size: 15px;
+        border: 1px solid #c8ccd2;
+        border-radius: 8px;
+        background: #fff;
+        width: 280px;
+      }
+      .note { color: #6b7280; font-size: 12px; margin-top: 4px; }
+    </style>
+  </head>
+  <body>
+    <h1>Харнес: проверка чипа вне инпута и hover</h1>
+
+    <div class="row">
+      <label for="i1">ИНН</label>
+      <input id="i1" name="inn" type="text" placeholder="12 цифр" />
+      <div class="note">name="inn" + label «ИНН». Чип должен быть справа снаружи, раскрываться в ФЛ/ЮЛ.</div>
+    </div>
+
+    <div class="row">
+      <label for="i2">СНИЛС</label>
+      <input id="i2" name="snils" type="text" />
+      <div class="note">name="snils" + label «СНИЛС». Одна кнопка.</div>
+    </div>
+
+    <div class="row">
+      <label for="i3">ИНН организации (type=tel)</label>
+      <input id="i3" name="tax_id" type="tel" />
+      <div class="note">name="tax_id".</div>
+    </div>
+
+    <div class="row">
+      <label for="i4">Почта (не должно быть чипа)</label>
+      <input id="i4" name="email" type="email" />
+    </div>
+
+    <!-- Скрипты расширения подключаются напрямую (content.js не использует chrome.*) -->
+    <script src="../lib/generators.js"></script>
+    <script>
+      // Тестовый режим: ?open=1 принудительно раскрывает чипы (для автотеста клика
+      // в окружении без отрисовки, где CSS :hover не срабатывает).
+      if (new URLSearchParams(location.search).get("open") === "1") {
+        const s = document.createElement("style");
+        s.textContent =
+          ".innfiller-chip__expand{width:76px!important;opacity:1!important}";
+        document.head.appendChild(s);
+      }
+    </script>
+    <script src="../content/content.js"></script>
+  </body>
+</html>

@@ -1,0 +1,167 @@
+/*
+ * Стили плавающего чипа для вставки ИНН/СНИЛС.
+ * Инжектируется только на добавленных пользователем сайтах.
+ * Все классы prefixed "innfiller-", чтобы не конфликтовать со страницей.
+ */
+
+.innfiller-chip,
+.innfiller-chip * {
+  box-sizing: border-box;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
+    Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+}
+
+.innfiller-chip {
+  position: fixed;
+  z-index: 2147483600;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  /* JS ставит top = центр поля; сдвигаемся на полвысоты вверх: */
+  transform: translateY(-50%);
+  pointer-events: auto;
+  line-height: 1;
+}
+
+/* Сторона размещения относительно поля. DOM-порядок: [expand, main].
+   right — чип справа от поля: иконка (main) у поля, expand растёт вправо.
+   left  — чип слева от поля: иконка у поля, expand растёт влево. */
+.innfiller-chip--right {
+  flex-direction: row-reverse;
+}
+.innfiller-chip--left {
+  flex-direction: row;
+}
+
+/* Главный значок-кружок (виден всегда). Для СНИЛС — это кнопка, для ИНН — триггер. */
+.innfiller-chip__main {
+  -webkit-appearance: none;
+  appearance: none;
+  border: 0;
+  margin: 0;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  background: linear-gradient(135deg, #4a90e2 0%, #1a5fb4 100%);
+  color: #fff;
+  box-shadow: 0 1px 4px rgba(26, 95, 180, 0.35), 0 0 0 1px rgba(0, 0, 0, 0.06);
+  pointer-events: auto;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.25s ease;
+}
+
+.innfiller-chip:hover .innfiller-chip__main {
+  transform: scale(1.07);
+  box-shadow: 0 2px 9px rgba(26, 95, 180, 0.45), 0 0 0 1px rgba(0, 0, 0, 0.06);
+}
+
+/* Раскрывающаяся часть с кнопками ФЛ / ЮЛ. */
+.innfiller-chip__expand {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  width: 0;
+  opacity: 0;
+  transition: width 0.28s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.18s ease;
+}
+
+.innfiller-chip--inn:hover .innfiller-chip__expand,
+.innfiller-chip--inn.is-open .innfiller-chip__expand {
+  width: 76px;
+  opacity: 1;
+}
+
+/* Мини-кнопки ФЛ / ЮЛ. */
+.innfiller-sub {
+  -webkit-appearance: none;
+  appearance: none;
+  border: 0;
+  height: 24px;
+  min-width: 34px;
+  padding: 0 8px;
+  border-radius: 12px;
+  background: #ffffff;
+  color: #1a5fb4;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  cursor: pointer;
+  box-shadow: 0 0 0 1px rgba(26, 95, 180, 0.18), 0 1px 3px rgba(0, 0, 0, 0.08);
+  transition: background 0.15s ease, color 0.15s ease, transform 0.1s ease;
+}
+
+.innfiller-sub:hover {
+  background: #1a5fb4;
+  color: #fff;
+}
+
+.innfiller-sub:active {
+  transform: scale(0.93);
+}
+
+/* Иконки внутри главного кружка (переключение sparkle → галочка при вставке). */
+.innfiller-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.innfiller-icon--ok {
+  display: none;
+}
+
+/* Состояние «вставлено»: кружок зеленеет, появляется галочка. */
+.innfiller-chip.is-done .innfiller-chip__main {
+  background: linear-gradient(135deg, #34a853 0%, #1e8e3e 100%);
+  animation: innfiller-pop 0.45s ease;
+}
+.innfiller-chip.is-done .innfiller-icon {
+  display: none;
+}
+.innfiller-chip.is-done .innfiller-icon--ok {
+  display: inline-flex;
+}
+
+@keyframes innfiller-pop {
+  0% { transform: scale(1); }
+  45% { transform: scale(1.18); }
+  100% { transform: scale(1); }
+}
+
+/* Доступность — видимый фокус. */
+.innfiller-chip button:focus-visible {
+  outline: 2px solid #1a73e8;
+  outline-offset: 2px;
+}
+
+/* Тёмная тема — подстраиваем кнопки под тёмный интерфейс. */
+@media (prefers-color-scheme: dark) {
+  .innfiller-sub {
+    background: #2a2e36;
+    color: #8ab4f8;
+    box-shadow: 0 0 0 1px rgba(138, 180, 248, 0.25), 0 1px 3px rgba(0, 0, 0, 0.4);
+  }
+  .innfiller-sub:hover {
+    background: #8ab4f8;
+    color: #15171b;
+  }
+  .innfiller-chip button:focus-visible {
+    outline-color: #8ab4f8;
+  }
+}
+
+/* Уважаем настройку «уменьшить анимацию». */
+@media (prefers-reduced-motion: reduce) {
+  .innfiller-chip,
+  .innfiller-chip * {
+    transition-duration: 0.001ms !important;
+    animation: none !important;
+  }
+}
